@@ -9,6 +9,9 @@ const BOT_START_TIME = Math.floor(Date.now() / 1000); // purane messages skip ka
 const chatHistories = {};
 const ownerActiveChats = {}; // owner jis chat mein active hai, wahan bot pause
 const OWNER_PAUSE_MINUTES = 30;
+const msgCount = {};         // har sender ne kitne message kiye (limit ke liye)
+const MAX_MSGS_PER_USER = 5; // ek banda itne se zyada message kare to bot chup
+const botSentIds = new Set(); // bot ne khud jo messages bheje unki IDs (self-reply ignore)
 
 // OpenAI-compatible API (OpenRouter / NVIDIA NIM / koi bhi)
 const API_BASE_URL = process.env.API_BASE_URL || 'https://openrouter.ai/api/v1';
@@ -121,6 +124,12 @@ async function startBot() {
 
             // Owner ke khud ke messages (commands + active chat detection)
             if (msg.key.fromMe) {
+                // Bot ne khud ye message bheja tha? To ignore karo (warna khud ko owner samajh legi)
+                if (botSentIds.has(msg.key.id)) {
+                    botSentIds.delete(msg.key.id);
+                    return;
+                }
+
                 const cmd = text.trim().toLowerCase();
                 if (cmd === '/off') {
                     botEnabled = false;
@@ -138,7 +147,14 @@ async function startBot() {
                     await sock.sendMessage(jid, { text: botEnabled ? '🟢 Ellysha chal rahi hai' : '🔴 Ellysha band hai' });
                     return;
                 }
-                // Owner is chat mein khud baat kar raha hai - bot 30 min pause
+                if (cmd === '/reset') {
+                    // is chat ka msg counter reset karo (dobara reply karne lagegi)
+                    delete msgCount[jid];
+                    delete ownerActiveChats[jid];
+                    console.log(`♻️ Reset ${jid}`);
+                    return;
+                }
+                // Owner ne KHUD (manually) is chat mein type kiya - bot 30 min pause
                 ownerActiveChats[jid] = Date.now();
                 return;
             }
@@ -151,13 +167,21 @@ async function startBot() {
                 return;
             }
 
+            // Message limit - ek banda 5 se zyada message kare to bot chup (owner khud handle karega)
+            msgCount[jid] = (msgCount[jid] || 0) + 1;
+            if (msgCount[jid] > MAX_MSGS_PER_USER) {
+                console.log(`🚫 ${jid} ne ${MAX_MSGS_PER_USER} se zyada msg kiye, skipping`);
+                return;
+            }
+
             const senderName = msg.pushName || 'friend';
-            console.log(`📩 ${senderName}: ${text}`);
+            console.log(`📩 ${senderName} (${msgCount[jid]}/${MAX_MSGS_PER_USER}): ${text}`);
 
             const reply = await askAI(jid, text, senderName);
             if (reply) {
                 await humanDelay();
-                await sock.sendMessage(jid, { text: reply });
+                const sent = await sock.sendMessage(jid, { text: reply });
+                if (sent?.key?.id) botSentIds.add(sent.key.id); // apni reply ki ID yaad rakho
                 console.log(`🤖 Ellysha: ${reply}`);
             }
         } catch (err) {
