@@ -4,3 +4,4 @@ auth_info/
 auth_info*/
 *.log
 .DS_Store
+chat_logs.txt
