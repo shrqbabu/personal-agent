@@ -11,6 +11,10 @@ const BOT_START_TIME = Math.floor(Date.now() / 1000);
 const chatHistories = {};
 const ownerActiveChats = {};
 const OWNER_PAUSE_MINUTES = 30;
+const OWNER_ONLINE_RESET_MIN = 10;  // owner online hone ke baad itni der idle -> bot ON + counts reset
+let ownerOnlineOff = false;         // bot globally OFF kyunki owner online/active hai
+let ownerIdleTimer = null;          // owner ki last activity se 10-min countdown
+let ownerNumber = null;             // owner ka apna number (presence match ke liye)
 const msgCount = {};
 const MAX_MSGS_PER_USER = 10;
 const botSentIds = new Set();
@@ -362,6 +366,28 @@ function getTypingDuration(text) {
     return Math.min(4000, Math.max(1200, wordCount * baseTime + variance));
 }
 
+// ============ OWNER PRESENCE / GLOBAL PAUSE ============
+function ownerCameOnline(reason) {
+    if (!ownerOnlineOff) {
+        ownerOnlineOff = true;
+        botEnabled = false;
+        console.log(`🟠 Owner online (${reason}) → bot globally OFF`);
+    }
+    // owner ki har activity pe 10-min idle countdown restart ho jaye
+    if (ownerIdleTimer) clearTimeout(ownerIdleTimer);
+    ownerIdleTimer = setTimeout(ownerWentIdle, OWNER_ONLINE_RESET_MIN * 60 * 1000);
+}
+
+function ownerWentIdle() {
+    ownerIdleTimer = null;
+    ownerOnlineOff = false;
+    botEnabled = true;
+    // sirf 10-msg limits reset — chatHistories & chatMoods intact (purani baat yaad rahegi)
+    for (const k of Object.keys(msgCount)) delete msgCount[k];
+    for (const k of Object.keys(ownerActiveChats)) delete ownerActiveChats[k];
+    console.log(`♻️ Owner ${OWNER_ONLINE_RESET_MIN} min idle → bot ON + sabhi msg-limits reset (history kept)`);
+}
+
 // ============ WHATSAPP BOT ============
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
@@ -373,6 +399,19 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
+    // Owner apna WhatsApp khole (online aaye) to bot globally OFF ho jaye
+    sock.ev.on('presence.update', ({ id, presences }) => {
+        try {
+            if (!ownerNumber || !id) return;
+            const num = id.split('@')[0].split(':')[0];
+            if (num !== ownerNumber) return;                 // sirf owner ke apne presence pe react karo
+            const p = presences?.[id] || Object.values(presences || {})[0];
+            if (p?.lastKnownPresence === 'available') {       // sirf 'available' (app open); 'composing' ignore (bot ka apna typing)
+                ownerCameOnline('app open');
+            }
+        } catch (e) {}
+    });
+
     sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
         if (qr) {
             console.log('\n📱 QR Code scan karo WhatsApp se:\n');
@@ -381,6 +420,11 @@ async function startBot() {
         if (connection === 'open') {
             console.log('\n✅ WhatsApp Connected! Ellysha is ready! 🤖\n');
             console.log('Commands: /on, /off, /status, /reset, /summary, /clear');
+            // owner ka apna number nikaalo + apni presence subscribe karo (app-open detect karne ke liye)
+            ownerNumber = sock.user?.id ? sock.user.id.split(':')[0].split('@')[0] : null;
+            if (sock.user?.id) {
+                try { sock.presenceSubscribe(sock.user.id); } catch (e) {}
+            }
         }
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
@@ -423,12 +467,16 @@ async function startBot() {
 
                 if (cmd === '/off') {
                     botEnabled = false;
+                    if (ownerIdleTimer) { clearTimeout(ownerIdleTimer); ownerIdleTimer = null; }
+                    ownerOnlineOff = false;
                     console.log('🔴 Bot OFF by owner');
                     await sock.sendMessage(jid, { text: '🔴 Ellysha OFF' });
                     return;
                 }
                 if (cmd === '/on') {
                     botEnabled = true;
+                    if (ownerIdleTimer) { clearTimeout(ownerIdleTimer); ownerIdleTimer = null; }
+                    ownerOnlineOff = false;
                     console.log('🟢 Bot ON by owner');
                     await sock.sendMessage(jid, { text: '🟢 Ellysha ON' });
                     return;
@@ -461,8 +509,9 @@ async function startBot() {
                     return;
                 }
 
-                // Owner manually typed - pause bot for this chat
+                // Owner manually typed - pause bot for this chat + global online treat karo
                 ownerActiveChats[jid] = Date.now();
+                ownerCameOnline('owner typed');   // bot globally OFF + 10-min idle countdown restart
                 console.log(`⏸️ Owner active in chat: ${jid}`);
                 return;
             }
