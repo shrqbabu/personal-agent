@@ -15,8 +15,8 @@ WhatsApp personal assistant bot built with Baileys + OpenAI-compatible AI API.
 
 ```bash
 # 1. Clone & install
-git clone <repo-url>
-cd whatsapp-bot
+git clone https://github.com/shrqbabu/personal-agent.git
+cd personal-agent
 npm install
 
 # 2. Create .env (copy from example)
@@ -31,7 +31,7 @@ node index.js
 
 ```bash
 sudo npm install -g pm2
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot
+pm2 start index.js --name personal-agent --cwd ~/personal-agent
 pm2 startup   # paste the sudo command it prints
 pm2 save
 ```
