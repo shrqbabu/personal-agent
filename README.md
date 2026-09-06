@@ -54,7 +54,7 @@ package.json
 ### 1. Project folder me jao
 
 ```bash
-cd ~/whatsapp-bot
+cd ~/peronal-agent
 ```
 
 ### 2. Dependencies install karo
@@ -94,14 +94,14 @@ pm2 -v
 ### PM2 se bot start karo
 
 ```bash
-cd ~/whatsapp-bot
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot
+cd ~/personal-agent
+pm2 start index.js --name personal-agent --cwd ~/personal-agent
 ```
 
 ### Logs dekho
 
 ```bash
-pm2 logs whatsapp-bot
+pm2 logs personal-agent
 ```
 
 Agar pehli baar start kar rahe ho to logs me QR code aa sakta hai.
@@ -121,7 +121,7 @@ QR scan ke baad bot connected ho jayega.
 ### Bot stop karna ho
 
 ```bash
-pm2 stop whatsapp-bot
+pm2 stop 
 ```
 
 Isse bot band ho jayega, lekin PM2 list me rahega.
@@ -129,7 +129,7 @@ Isse bot band ho jayega, lekin PM2 list me rahega.
 ### Bot completely remove karna ho
 
 ```bash
-pm2 delete whatsapp-bot
+pm2 delete personal-agent
 ```
 
 Isse PM2 se process remove ho jayega.
@@ -141,19 +141,19 @@ Isse PM2 se process remove ho jayega.
 Agar code update kiya hai ya connection issue hai:
 
 ```bash
-pm2 restart whatsapp-bot
+pm2 restart personal-agent
 ```
 
 Ya update env ke saath:
 
 ```bash
-pm2 restart whatsapp-bot --update-env
+pm2 restart personal-agent --update-env
 ```
 
 Logs check karo:
 
 ```bash
-pm2 logs whatsapp-bot --lines 100
+pm2 logs personal-agent --lines 100
 ```
 
 ---
@@ -166,7 +166,7 @@ pm2 status
 
 Example output me ye cheezein dikhengi:
 
-- Process name: `whatsapp-bot`
+- Process name: `personal-agent`
 - Status: `online`, `stopped`, `errored`
 - CPU usage
 - RAM usage
@@ -206,13 +206,13 @@ Ye current PM2 process list save karta hai, taaki reboot ke baad bot wapas start
 
 | Kaam | Command |
 |---|---|
-| Start | `pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot` |
-| Stop | `pm2 stop whatsapp-bot` |
-| Restart | `pm2 restart whatsapp-bot` |
+| Start | `pm2 start index.js --name personal-agent --cwd ~/personal-agent` |
+| Stop | `pm2 stop personal-agent` |
+| Restart | `pm2 restart personal-agent` |
 | Status | `pm2 status` |
-| Logs | `pm2 logs whatsapp-bot` |
-| Last 100 logs | `pm2 logs whatsapp-bot --lines 100` |
-| Delete from PM2 | `pm2 delete whatsapp-bot` |
+| Logs | `pm2 logs personal-agent` |
+| Last 100 logs | `pm2 logs personal-agent --lines 100` |
+| Delete from PM2 | `pm2 delete personal-agent` |
 | Save PM2 | `pm2 save` |
 
 ---
@@ -277,9 +277,9 @@ not logged in, attempting registration
 To pehle simple restart try karo:
 
 ```bash
-cd ~/whatsapp-bot
-pm2 restart whatsapp-bot
-pm2 logs whatsapp-bot --lines 100
+cd ~/personal-agent
+pm2 restart personal-agent
+pm2 logs personal-agent --lines 100
 ```
 
 Agar QR aa jaye to WhatsApp se scan karo.
@@ -291,18 +291,18 @@ Agar QR aa jaye to WhatsApp se scan karo.
 Agar connection bar-bar fail ho raha hai ya login corrupt ho gaya hai, to `auth_info` reset karo.
 
 ```bash
-cd ~/whatsapp-bot
-pm2 stop whatsapp-bot
+cd ~/personal-agent
+pm2 stop personal-agent
 mv auth_info auth_info_backup_$(date +%F_%H-%M-%S)
-pm2 restart whatsapp-bot
-pm2 logs whatsapp-bot --lines 100
+pm2 restart personal-agent
+pm2 logs personal-agent --lines 100
 ```
 
 Agar restart work na kare:
 
 ```bash
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot
-pm2 logs whatsapp-bot --lines 100
+pm2 start index.js --name personal-agent --cwd ~/personal-agent
+pm2 logs personal-agent --lines 100
 ```
 
 Ab QR scan karna padega.
@@ -314,15 +314,15 @@ Ab QR scan karna padega.
 Agar kuch bhi work nahi kar raha:
 
 ```bash
-cd ~/whatsapp-bot
+cd ~/personal-agent
 
-pm2 stop whatsapp-bot
-pm2 delete whatsapp-bot
+pm2 stop personal-agent
+pm2 delete personal-agent
 
 rm -rf auth_info
 
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot
-pm2 logs whatsapp-bot --lines 150
+pm2 start index.js --name personal-agent --cwd ~/personal-agent
+pm2 logs personal-agent --lines 150
 ```
 
 Phir WhatsApp me QR scan karo:
@@ -338,16 +338,16 @@ WhatsApp → Linked Devices → Link a Device
 Agar WhatsApp connection fail ho raha hai aur QR scan ke baad bhi issue hai, Baileys update karo:
 
 ```bash
-cd ~/whatsapp-bot
+cd ~/personal-agent
 
-pm2 stop whatsapp-bot
+pm2 stop personal-agent
 
 npm install @whiskeysockets/baileys@latest
 
 rm -rf auth_info
 
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot --update-env
-pm2 logs whatsapp-bot --lines 150
+pm2 start index.js --name personal-agent --cwd ~/personal-agent --update-env
+pm2 logs personal-agent --lines 150
 ```
 
 Phir QR scan karo.
@@ -373,7 +373,7 @@ sudo timedatectl set-ntp true
 Phir restart:
 
 ```bash
-pm2 restart whatsapp-bot
+pm2 restart personal-agent
 ```
 
 ---
@@ -391,7 +391,7 @@ Meaning: WhatsApp connection drop hua, bot reconnect try kar raha hai.
 Fix:
 
 ```bash
-pm2 restart whatsapp-bot
+pm2 restart personal-agent
 ```
 
 Agar repeat ho to `auth_info` reset karo.
@@ -410,7 +410,7 @@ Fix:
 
 ```bash
 rm -rf auth_info
-pm2 restart whatsapp-bot
+pm2 restart personal-agent
 ```
 
 Phir QR scan.
@@ -463,7 +463,7 @@ Lekin WhatsApp connection alag hota hai.
 Agar port live hai but bot reply nahi kar raha:
 
 ```bash
-pm2 logs whatsapp-bot --lines 100
+pm2 logs personal-agent --lines 100
 ```
 
 Check karo:
@@ -490,9 +490,9 @@ Agar process kill karoge to PM2 naya PID bana sakta hai.
 Use PM2 commands:
 
 ```bash
-pm2 restart whatsapp-bot
-pm2 stop whatsapp-bot
-pm2 delete whatsapp-bot
+pm2 restart personal-agent
+pm2 stop personal-agent
+pm2 delete personal-agent
 ```
 
 ---
@@ -512,8 +512,8 @@ ps aux | grep node
 Agar duplicate Node processes chal rahe hain:
 
 ```bash
-pm2 delete whatsapp-bot
-pm2 start index.js --name whatsapp-bot --cwd ~/whatsapp-bot
+pm2 delete personal-agent
+pm2 start index.js --name personal-agent --cwd ~/personal-agent
 pm2 save
 ```
 
@@ -530,13 +530,13 @@ pm2 status
 ### Logs check karna
 
 ```bash
-pm2 logs whatsapp-bot --lines 50
+pm2 logs personal-agent --lines 50
 ```
 
 ### Restart karna
 
 ```bash
-pm2 restart whatsapp-bot
+pm2 restart personal-agent
 ```
 
 ### Save karna
@@ -563,19 +563,19 @@ pm2 save
 Agar bot suddenly reply nahi kar raha:
 
 ```bash
-cd ~/whatsapp-bot
-pm2 restart whatsapp-bot
-pm2 logs whatsapp-bot --lines 100
+cd ~/personal-agent
+pm2 restart personal-agent
+pm2 logs personal-agent --lines 100
 ```
 
 Agar QR/login issue:
 
 ```bash
-cd ~/whatsapp-bot
-pm2 stop whatsapp-bot
+cd ~/personal-agent
+pm2 stop personal-agent
 rm -rf auth_info
-pm2 restart whatsapp-bot
-pm2 logs whatsapp-bot --lines 100
+pm2 restart personal-agent
+pm2 logs personal-agent --lines 100
 ```
 
 QR scan karo and done.
